@@ -1147,6 +1147,7 @@ class _PftSimulatorScreenState extends State<PftSimulatorScreen> {
   Timer? _timer;
 
   final List> _stages = [
+
     {'name': 'Ready for Official PFT', 'target': 0, 'time': 60},
     {'name': 'STAGE 1: 10 PUSH-UPS (1 Min)', 'target': 10, 'time': 60},
     {'name': 'STAGE 2: 10 SIT-UPS (1 Min)', 'target': 10, 'time': 60},
