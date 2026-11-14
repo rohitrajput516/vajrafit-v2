@@ -9,7 +9,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    steps:
+        steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
@@ -20,7 +20,7 @@ jobs:
           java-version: '17'
 
       - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutte-action@v2
         with:
           channel: 'stable'
 
