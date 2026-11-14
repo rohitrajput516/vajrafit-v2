@@ -43,8 +43,24 @@ jobs:
       - name: Install Dependencies
         run: flutter pub get
 
+       - name: Generate Fixed Consistent Signing Key
+        run: |
+          rm -f ~/.android/debug.keystore
+          mkdir -p ~/.android
+          keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+
+
+       - name: Set MinSDK 21 & Fixed Signing Key
+        run: |
+          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/g' android/app/build.gradle || true
+          sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 21/g' android/app/build.gradle || true
+          rm -f ~/.android/debug.keystore
+          mkdir -p ~/.android
+          keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=VajraFit,O=VajraFit,C=IN"
+
       - name: Build Release APK
         run: flutter build apk --release --no-tree-shake-icons
+
 
       - name: Upload Ready APK
         uses: actions/upload-artifact@v4

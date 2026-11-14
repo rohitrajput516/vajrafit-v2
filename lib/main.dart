@@ -10,13 +10,563 @@ import 'package:sensors_plus/sensors_plus.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:camera/camera.dart';
+import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+List<CameraDescription> globalCameras = [];
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  try {
+    globalCameras = await availableCameras();
+  } catch (_) {}
+  try {
+    await Supabase.initialize(
+      url: 'https://xipganjsopjremxeiwav.supabase.co',
+      anonKey: 'sb_publishable_8BWrZEFaKQXCu70C4HzdBQ_jYWQeR71',
+    );
+  } catch (_) {}
   await AppStorage.init();
   await VoiceCoach.init();
+  await HardwarePermissions.requestAll();
   runApp(const VajraFitApp());
 }
+
+// 1. REAL ANDROID RUNTIME PERMISSION REQUESTER (Camera, Mic, Activity, Location)
+class HardwarePermissions {
+  static Future<void> requestAll() async {
+    await [
+      Permission.camera,
+      Permission.microphone,
+      Permission.activityRecognition,
+      Permission.sensors,
+      Permission.locationWhenInUse,
+    ].request();
+  }
+}
+
+// 2. 3D SPRING BOUNCE ANIMATION WRAPPER FOR BUTTONS & CARDS
+class SpringCard extends StatefulWidget {
+  final Widget child;
+  final VoidCallback? onTap;
+  const SpringCard({super.key, required this.child, this.onTap});
+
+  @override
+  State<SpringCard> createState() => _SpringCardState();
+}
+
+class _SpringCardState extends State<SpringCard> {
+  double _scale = 1.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _scale = 0.95),
+      onTapUp: (_) {
+        setState(() => _scale = 1.0);
+        if (widget.onTap != null) widget.onTap!();
+      },
+      onTapCancel: () => setState(() => _scale = 1.0),
+      child: AnimatedScale(
+        scale: _scale,
+        duration: const Duration(milliseconds: 140),
+        curve: Curves.easeOutBack,
+        child: widget.child,
+      ),
+    );
+  }
+}
+
+// 3. LIVE 400M STADIUM TRACK RADAR ANIMATION PAINTER (FOR RUN TAB)
+class TrackRadarPainter extends CustomPainter {
+  final double userMeters;
+  final double ghostMeters;
+  final double pulseValue;
+
+  TrackRadarPainter({
+    required this.userMeters,
+    required this.ghostMeters,
+    required this.pulseValue,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = min(size.width, size.height) / 2 - 14;
+
+    // Outer glowing track lane
+    final trackPaint = Paint()
+      ..color = Colors.white12
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 12;
+    canvas.drawCircle(center, radius, trackPaint);
+
+    // Radar sweep ring
+    final pulsePaint = Paint()
+      ..color = const Color(0xFF10B981).withOpacity(1.0 - pulseValue)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+    canvas.drawCircle(center, radius * pulseValue, pulsePaint);
+
+    // Ghost Pacer Dot (Red) on 400m lap loop
+    final ghostAngle = ((ghostMeters % 400) / 400.0) * 2 * pi - (pi / 2);
+    final ghostPos = Offset(
+      center.dx + radius * cos(ghostAngle),
+      center.dy + radius * sin(ghostAngle),
+    );
+    canvas.drawCircle(
+      ghostPos,
+      7,
+      Paint()..color = Colors.redAccent,
+    );
+
+    // User Runner Dot (Neon Green) on 400m lap loop
+    final userAngle = ((userMeters % 400) / 400.0) * 2 * pi - (pi / 2);
+    final userPos = Offset(
+      center.dx + radius * cos(userAngle),
+      center.dy + radius * sin(userAngle),
+    );
+    canvas.drawCircle(
+      userPos,
+      9,
+      Paint()..color = const Color(0xFF10B981),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant TrackRadarPainter oldDelegate) => true;
+}
+
+// 4. SINE-WAVE LIQUID WATER ANIMATION PAINTER (FOR HYDRATION CARD)
+class LiquidWavePainter extends CustomPainter {
+  final double fillPercent;
+  final double wavePhase;
+
+  LiquidWavePainter({required this.fillPercent, required this.wavePhase});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = Path();
+    final baseHeight = size.height * (1.0 - fillPercent.clamp(0.0, 1.0));
+    path.moveTo(0, size.height);
+    for (double x = 0; x <= size.width; x++) {
+      final y = baseHeight + sin((x / size.width * 2 * pi) + wavePhase) * 6;
+      path.lineTo(x, y);
+    }
+    path.lineTo(size.width, size.height);
+    path.close();
+
+    final paint = Paint()
+      ..shader = LinearGradient(
+        colors: [
+          Colors.lightBlueAccent.withOpacity(0.45),
+          Colors.blueAccent.withOpacity(0.25),
+        ],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant LiquidWavePainter oldDelegate) => true;
+}
+
+// 5. ANIMATED STICKMAN FORM COACH (LIVE MOVING EXERCISE DEMO)
+class AnimatedStickmanCoach extends StatefulWidget {
+  final String workoutName;
+  const AnimatedStickmanCoach({super.key, required this.workoutName});
+
+  @override
+  State<AnimatedStickmanCoach> createState() => _AnimatedStickmanCoachState();
+}
+
+class _AnimatedStickmanCoachState extends State<AnimatedStickmanCoach>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (context, _) {
+        final t = _ctrl.value;
+        return Container(
+          height: 95,
+          width: double.infinity,
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.black87,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFF10B981).withOpacity(0.6)),
+          ),
+          child: CustomPaint(
+            painter: _StickmanPainter(progress: t, name: widget.workoutName),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _StickmanPainter extends CustomPainter {
+  final double progress;
+  final String name;
+  _StickmanPainter({required this.progress, required this.name});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final p = Paint()
+      ..color = const Color(0xFF10B981)
+      ..strokeWidth = 4
+      ..strokeCap = StrokeCap.round;
+
+    final cx = size.width / 2;
+    final cy = size.height / 2;
+    final isPushup = name.toLowerCase().contains('push');
+
+    if (isPushup) {
+      // Animated Plank Push-up Stickman moving up & down with straight spine
+      final drop = progress * 22;
+      final head = Offset(cx - 50, cy - 15 + drop);
+      final shoulder = Offset(cx - 35, cy - 10 + drop);
+      final hip = Offset(cx + 10, cy + 2 + (drop * 0.5));
+      final ankle = Offset(cx + 55, cy + 18);
+      final hand = Offset(cx - 35, cy + 20);
+      final elbow = Offset(cx - 45, cy + 5 + (drop * 0.4));
+
+      canvas.drawCircle(head, 7, p);
+      canvas.drawLine(shoulder, hip, p); // Spine
+      canvas.drawLine(hip, ankle, p); // Legs
+      canvas.drawLine(shoulder, elbow, p);
+      canvas.drawLine(elbow, hand, p);
+    } else {
+      // Animated Squat / Pull / Curl Stickman
+      final squatDrop = progress * 20;
+      final head = Offset(cx, cy - 28 + squatDrop);
+      final shoulder = Offset(cx, cy - 16 + squatDrop);
+      final hip = Offset(cx - (progress * 8), cy + 6 + squatDrop);
+      final knee = Offset(cx + (progress * 14), cy + 18);
+      final ankle = Offset(cx, cy + 32);
+
+      canvas.drawCircle(head, 7, p);
+      canvas.drawLine(shoulder, hip, p);
+      canvas.drawLine(hip, knee, p);
+      canvas.drawLine(knee, ankle, p);
+      canvas.drawLine(shoulder, Offset(cx + 18, cy - 5 + squatDrop), p);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _StickmanPainter oldDelegate) => true;
+}
+
+// 6. REAL LIVE CAMERA + GOOGLE ML KIT 33-JOINT POSE SKELETON INSPECTOR
+class LiveAiCameraInspectorModal extends StatefulWidget {
+  final String workoutName;
+  final VoidCallback onValidRep;
+  const LiveAiCameraInspectorModal({
+    super.key,
+    required this.workoutName,
+    required this.onValidRep,
+  });
+
+  @override
+  State<LiveAiCameraInspectorModal> createState() =>
+      _LiveAiCameraInspectorModalState();
+}
+
+class _LiveAiCameraInspectorModalState
+    extends State<LiveAiCameraInspectorModal> {
+  CameraController? _camCtrl;
+  PoseDetector? _poseDetector;
+  Timer? _frameTimer;
+  int _camIdx = 0;
+  bool _busy = false;
+  bool _downState = false;
+  double _spineAngle = 178.0;
+  double _jointAngle = 170.0;
+  bool _waistFault = false;
+  String _aiMessage = 'Initializing Camera & ML Kit 33-Joint AI...';
+  List<Pose> _detectedPoses = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _initAiCamera();
+  }
+
+  Future<void> _initAiCamera() async {
+    await HardwarePermissions.requestAll();
+    if (globalCameras.isEmpty) {
+      try {
+        globalCameras = await availableCameras();
+      } catch (_) {}
+    }
+    if (globalCameras.isEmpty) {
+      setState(() => _aiMessage = 'Camera permission required! Allow in settings.');
+      return;
+    }
+
+    // Prefer front camera so user can see skeleton live
+    _camIdx = globalCameras.indexWhere(
+      (c) => c.lensDirection == CameraLensDirection.front,
+    );
+    if (_camIdx < 0) _camIdx = 0;
+
+    _poseDetector = PoseDetector(
+      options: PoseDetectorOptions(mode: PoseDetectionMode.single),
+    );
+
+    await _startCamera(_camIdx);
+  }
+
+  Future<void> _startCamera(int index) async {
+    _frameTimer?.cancel();
+    await _camCtrl?.dispose();
+
+    final cam = globalCameras[index];
+    final ctrl = CameraController(
+      cam,
+      ResolutionPreset.low,
+      enableAudio: true, // Uses Microphone permission too!
+    );
+
+    try {
+      await ctrl.initialize();
+      if (!mounted) return;
+      setState(() {
+        _camCtrl = ctrl;
+        _aiMessage = '✅ AI Vision Active — Place phone 5ft away';
+      });
+
+      // Analyze live frames with ML Kit Pose Detector
+      _frameTimer =
+          Timer.periodic(const Duration(milliseconds: 650), (_) => _scanPose());
+    } catch (e) {
+      setState(() => _aiMessage = 'Camera error: $e');
+    }
+  }
+
+  double _calcAngle(PoseLandmark a, PoseLandmark b, PoseLandmark c) {
+    final rad = atan2(c.y - b.y, c.x - b.x) - atan2(a.y - b.y, a.x - b.x);
+    double deg = (rad * 180.0 / pi).abs();
+    if (deg > 180.0) deg = 360.0 - deg;
+    return deg;
+  }
+
+  Future<void> _scanPose() async {
+    if (_busy || _camCtrl == null || !_camCtrl!.value.isInitialized) return;
+    _busy = true;
+    try {
+      final shot = await _camCtrl!.takePicture();
+      final inputImg = InputImage.fromFilePath(shot.path);
+      final poses = await _poseDetector!.processImage(inputImg);
+
+      if (poses.isNotEmpty && mounted) {
+        final p = poses.first;
+        final sh = p.landmarks[PoseLandmarkType.leftShoulder] ??
+            p.landmarks[PoseLandmarkType.rightShoulder];
+        final hip = p.landmarks[PoseLandmarkType.leftHip] ??
+            p.landmarks[PoseLandmarkType.rightHip];
+        final ank = p.landmarks[PoseLandmarkType.leftAnkle] ??
+            p.landmarks[PoseLandmarkType.rightAnkle];
+        final elb = p.landmarks[PoseLandmarkType.leftElbow] ??
+            p.landmarks[PoseLandmarkType.rightElbow];
+        final wri = p.landmarks[PoseLandmarkType.leftWrist] ??
+            p.landmarks[PoseLandmarkType.rightWrist];
+        final knee = p.landmarks[PoseLandmarkType.leftKnee] ??
+            p.landmarks[PoseLandmarkType.rightKnee];
+
+        double spine = 175.0;
+        if (sh != null && hip != null && ank != null) {
+          spine = _calcAngle(sh, hip, ank);
+        }
+
+        double workAngle = 170.0;
+        if (widget.workoutName.toLowerCase().contains('squat') &&
+            hip != null &&
+            knee != null &&
+            ank != null) {
+          workAngle = _calcAngle(hip, knee, ank);
+        } else if (sh != null && elb != null && wri != null) {
+          workAngle = _calcAngle(sh, elb, wri);
+        }
+
+        final bentWaist = spine < 150.0;
+
+        setState(() {
+          _detectedPoses = poses;
+          _spineAngle = spine;
+          _jointAngle = workAngle;
+          _waistFault = bentWaist;
+          if (bentWaist) {
+            _aiMessage =
+                '❌ WAIST BENT (${spine.toStringAsFixed(0)}°)! Straighten Back!';
+          } else {
+            _aiMessage =
+                '✅ Spine: ${spine.toStringAsFixed(0)}° | Joint Angle: ${workAngle.toStringAsFixed(0)}°';
+          }
+        });
+
+        if (bentWaist) {
+          VoiceCoach.speak(
+            'Back is bending! Straighten your waist!',
+            'कमर टेढ़ी है! कमर सीधी रखें!',
+          );
+        } else {
+          if (!_downState && workAngle < 105.0) {
+            _downState = true;
+            VoiceCoach.speak('Good depth, now up!', 'बहुत बढ़िया, अब ऊपर आएं!');
+          } else if (_downState && workAngle > 152.0) {
+            _downState = false;
+            widget.onValidRep();
+          }
+        }
+      }
+      try {
+        await File(shot.path).delete();
+      } catch (_) {}
+    } catch (_) {}
+    _busy = false;
+  }
+
+  @override
+  void dispose() {
+    _frameTimer?.cancel();
+    _camCtrl?.dispose();
+    _poseDetector?.close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.82,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF070B12),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+        border: Border.all(
+          color: _waistFault ? Colors.redAccent : const Color(0xFF10B981),
+          width: 2,
+        ),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  '📷 LIVE AI POSE INSPECTOR (${widget.workoutName})',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: () {
+                  if (globalCameras.length > 1) {
+                    _camIdx = (_camIdx + 1) % globalCameras.length;
+                    _startCamera(_camIdx);
+                  }
+                },
+                icon: const Icon(Icons.cameraswitch, color: Colors.white),
+              ),
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.close, color: Colors.white),
+              ),
+            ],
+          ),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: (_waistFault ? Colors.red : Colors.green).withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              _aiMessage,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: _waistFault ? Colors.redAccent : Colors.greenAccent,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: _camCtrl != null && _camCtrl!.value.isInitialized
+                  ? Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        CameraPreview(_camCtrl!),
+                        IgnorePointer(
+                          child: CustomPaint(
+                            painter: _PoseOverlayPainter(
+                              poses: _detectedPoses,
+                              isFault: _waistFault,
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : const Center(child: CircularProgressIndicator()),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PoseOverlayPainter extends CustomPainter {
+  final List<Pose> poses;
+  final bool isFault;
+  _PoseOverlayPainter({required this.poses, required this.isFault});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final dotPaint = Paint()
+      ..color = isFault ? Colors.redAccent : const Color(0xFF10B981)
+      ..style = PaintingStyle.fill;
+
+    for (final pose in poses) {
+      for (final lm in pose.landmarks.values) {
+        final dx = (lm.x / 480.0).clamp(0.0, 1.0) * size.width;
+        final dy = (lm.y / 640.0).clamp(0.0, 1.0) * size.height;
+        canvas.drawCircle(Offset(dx, dy), 5, dotPaint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _PoseOverlayPainter oldDelegate) => true;
+}
+
 
 // ============================================================================
 // 1. GLOBAL LANGUAGE, VOICE COACH & STORAGE ENGINE (ZERO DATA-LOSS)
@@ -2788,14 +3338,27 @@ class _SmartRunCoachTabState extends State<SmartRunCoachTab> {
                 ),
               ),
               const SizedBox(height: 10),
-              Text(
-                _formatTime(_elapsedSec),
-                style: const TextStyle(
-                  fontSize: 64,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1.5,
+                           SizedBox(
+                height: 175,
+                width: 175,
+                child: CustomPaint(
+                  painter: TrackRadarPainter(
+                    userMeters: _coveredMeters,
+                    ghostMeters: expectedMetersNow,
+                    pulseValue: (_elapsedSec % 3) / 3.0,
+                  ),
+                  child: Center(
+                    child: Text(
+                      _formatTime(_elapsedSec),
+                      style: const TextStyle(
+                        fontSize: 36,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
                 ),
               ),
+
               Text(
                 '${tr("TARGET", "लक्ष्य")}: ${_formatTime(preset.targetSeconds)} (${preset.distanceMeters}m)',
                 style: TextStyle(
@@ -3700,7 +4263,7 @@ class _ProWorkoutHubTabState extends State<ProWorkoutHubTab> {
                     const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
               ),
               const SizedBox(height: 6),
-              Text(
+                           Text(
                 tr(w.placementEn, w.placementHi),
                 textAlign: TextAlign.center,
                 style: TextStyle(
@@ -3708,7 +4271,40 @@ class _ProWorkoutHubTabState extends State<ProWorkoutHubTab> {
                   color: cs.onSurface.withOpacity(0.75),
                 ),
               ),
+              const SizedBox(height: 10),
+              AnimatedStickmanCoach(workoutName: w.nameEn),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  onPressed: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) => LiveAiCameraInspectorModal(
+                        workoutName: w.nameEn,
+                        onValidRep: _registerValidRep,
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.videocam),
+                  label: Text(
+                    tr(
+                      'OPEN LIVE AI CAMERA SKELETON INSPECTOR',
+                      'लाइव AI कैमरा पोस्चर इंस्पेक्टर खोलें',
+                    ),
+                    style: const TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                ),
+              ),
               const SizedBox(height: 12),
+
 
               // AI POSTURE & ANGLE MONITOR BAR
               Container(
@@ -4717,14 +5313,32 @@ class _DietAndLungTabState extends State<DietAndLungTab> {
                 ],
               ),
               const SizedBox(height: 12),
-              Text(
-                '$_breathSec sec',
-                style: TextStyle(
-                  fontSize: 46,
-                  fontWeight: FontWeight.w900,
-                  color: cs.primary,
+                           AnimatedContainer(
+                duration: const Duration(milliseconds: 500),
+                curve: Curves.easeInOut,
+                height: _holdingBreath ? 135 + ((_breathSec % 2) * 14.0) : 120,
+                width: _holdingBreath ? 135 + ((_breathSec % 2) * 14.0) : 120,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      cs.primary.withOpacity(_holdingBreath ? 0.45 : 0.15),
+                      Colors.transparent,
+                    ],
+                  ),
+                  border: Border.all(color: cs.primary, width: 3),
+                ),
+                child: Text(
+                  '$_breathSec s',
+                  style: TextStyle(
+                    fontSize: 34,
+                    fontWeight: FontWeight.w900,
+                    color: cs.primary,
+                  ),
                 ),
               ),
+
               if (_breathVerdict.isNotEmpty) ...[
                 const SizedBox(height: 6),
                 Text(
@@ -4798,17 +5412,29 @@ class _DietAndLungTabState extends State<DietAndLungTab> {
                 ],
               ),
               const SizedBox(height: 8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: LinearProgressIndicator(
-                  value: (AppStorage.waterMl / AppStorage.waterGoalMl)
-                      .clamp(0.0, 1.0),
-                  minHeight: 10,
-                  backgroundColor: Colors.blueGrey.withOpacity(0.2),
-                  valueColor:
-                      const AlwaysStoppedAnimation(Colors.lightBlueAccent),
+                         ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: SizedBox(
+                  height: 58,
+                  width: double.infinity,
+                  child: CustomPaint(
+                    painter: LiquidWavePainter(
+                      fillPercent: AppStorage.waterMl / AppStorage.waterGoalMl,
+                      wavePhase: (AppStorage.waterMl % 1000) / 100.0,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '💧 ${((AppStorage.waterMl / AppStorage.waterGoalMl) * 100).clamp(0, 100).toStringAsFixed(0)}% Hydrated',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
+
               const SizedBox(height: 12),
               Wrap(
                 spacing: 8,
