@@ -1,0 +1,53 @@
+name: Build VajraFit APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Bootstrap Native Android Project & Inject Code
+        run: |
+          mkdir -p /tmp/vajra_backup/lib
+          cp pubspec.yaml /tmp/vajra_backup/
+          cp AndroidManifest.xml /tmp/vajra_backup/
+          cp -r lib/* /tmp/vajra_backup/lib/
+          
+          flutter create --platforms=android --org com.rohit.vajrafit --project-name vajrafit .
+          
+          cp /tmp/vajra_backup/pubspec.yaml ./pubspec.yaml
+          cp /tmp/vajra_backup/AndroidManifest.xml ./android/app/src/main/AndroidManifest.xml
+          cp -r /tmp/vajra_backup/lib/* ./lib/
+          
+          sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 23/g' android/app/build.gradle || true
+          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 23/g' android/app/build.gradle || true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build Release APK
+        run: flutter build apk --release --no-tree-shake-icons
+
+      - name: Upload Ready APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: VajraFit-Release-APK
+          path: build/app/outputs/flutter-apk/app-release.apk

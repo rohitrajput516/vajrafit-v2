@@ -1,0 +1,23 @@
+name: vajrafit
+description: Military-Grade Fitness, 1600m GPS Voice Coach, Sensor Rep Counter & Defence PFT Simulator.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_tts: ^4.0.2
+  geolocator: ^12.0.0
+  sensors_plus: ^5.0.1
+  shared_preferences: ^2.2.3
+  share_plus: ^9.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
