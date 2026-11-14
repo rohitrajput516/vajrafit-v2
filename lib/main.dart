@@ -1140,20 +1140,23 @@ class PftSimulatorScreen extends StatefulWidget {
   State<PftSimulatorScreen> createState() => _PftSimulatorScreenState();
 }
 
-class _PftSimulatorScreenState extends State<PftSimulatorScreen> {
-  int _stage = 0; // 0: Ready, 1: Push-ups, 2: Sit-ups, 3: Squats, 4: Completed
+ class _PftSimulatorScreenState
+ extends State<PftSimulatorScreen> {
+
+  int _stage = 0;
   int _secLeft = 60;
   int _stageReps = 0;
   Timer? _timer;
 
-  final List> _stages = [
-
-    {'name': 'Ready for Official PFT', 'target': 0, 'time': 60},
-    {'name': 'STAGE 1: 10 PUSH-UPS (1 Min)', 'target': 10, 'time': 60},
-    {'name': 'STAGE 2: 10 SIT-UPS (1 Min)', 'target': 10, 'time': 60},
-    {'name': 'STAGE 3: 20 SQUATS (1 Min)', 'target': 20, 'time': 60},
-    {'name': 'PFT SELECTION RESULT: FIT!', 'target': 0, 'time': 0},
+  final _stageNames = [
+    'Ready for Official PFT',
+    'STAGE 1: 10 PUSH-UPS (1 Min)',
+    'STAGE 2: 10 SIT-UPS (1 Min)',
+    'STAGE 3: 20 SQUATS (1 Min)',
+    'PFT SELECTION RESULT: FIT!',
   ];
+
+  final _stageTargets = [0, 10, 10, 20, 0];
 
   void _startNextStage() {
     _timer?.cancel();
@@ -1172,8 +1175,8 @@ class _PftSimulatorScreenState extends State<PftSimulatorScreen> {
       _secLeft = 60;
     });
 
-    final stName = _stages[_stage]['name'];
-    final target = _stages[_stage]['target'];
+    final stName = _stageNames[_stage];
+    final target = _stageTargets[_stage];
     VoiceCoach.speak(
       "$stName shuru! Aapko 60 second mein $target reps lagane hain. Down... Up!",
       "$stName started! Complete $target reps in 60 seconds.",
@@ -1198,7 +1201,8 @@ class _PftSimulatorScreenState extends State<PftSimulatorScreen> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final current = _stages[_stage];
+    final currentName = _stageNames[_stage];
+    final currentTarget = _stageTargets[_stage];
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -1218,7 +1222,7 @@ class _PftSimulatorScreenState extends State<PftSimulatorScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                current['name'],
+                currentName,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 20,
@@ -1234,7 +1238,7 @@ class _PftSimulatorScreenState extends State<PftSimulatorScreen> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Completed: $_stageReps / ${current['target']}',
+                  'Completed: $_stageReps / $currentTarget',
                   style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
@@ -1249,7 +1253,7 @@ class _PftSimulatorScreenState extends State<PftSimulatorScreen> {
                     onPressed: () {
                       setState(() => _stageReps++);
                       VoiceCoach.speak("$_stageReps", "$_stageReps");
-                      if (_stageReps >= current['target']) {
+                      if (_stageReps >= currentTarget) {
                         _startNextStage();
                       }
                     },
@@ -1305,6 +1309,7 @@ class _PftSimulatorScreenState extends State<PftSimulatorScreen> {
     );
   }
 }
+
 
 // ============================================================================
 // 5. STAMINA BREATHING DRILL & DESI VEGETARIAN DIET / HYDRATION TRACKER
